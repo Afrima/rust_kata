@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-const BOOK_ID_ARRAY: &[u8] = &[1, 2, 3, 4, 5];
-const BOOK_PRICE: f32 = 8.0;
+const BOOK_ID_ARRAY: [u8; 5] = [1, 2, 3, 4, 5];
+const BOOK_PRICE: u16 = 800;
 
 fn main() {
     print!("{}", buy(&[1, 1, 2, 3, 4, 3, 5, 2]));
@@ -9,55 +9,57 @@ fn main() {
 
 fn buy(book_ids: &[u8]) -> f32 {
     let mut books = map_books(book_ids);
-    let mut overall_price = 0.0;
-    loop {
-        let price: f32 = get_book_price(&mut books);
-        if price == 0.0 {
-            break;
-        }
+    let mut overall_price = 0;
+    while !books.is_empty() {
+        let price: u16 = get_book_price(&mut books);
         overall_price += get_discounted_price(price);
     }
-    return (overall_price * 100.0).round() / 100.0;
+    return overall_price as f32 / 100.0;
 }
 
-fn get_discounted_price(price: f32) -> f32 {
-    if price / BOOK_PRICE == 2.0 {
-        return price * 0.95;
-    } else if price / BOOK_PRICE == 3.0 {
-        return price * 0.90;
-    } else if price / BOOK_PRICE == 4.0 {
-        return price * 0.80;
-    } else if price / BOOK_PRICE == 5.0 {
-        return price * 0.75;
+fn get_discounted_price(price: u16) -> u16 {
+    let mut price_as_float: f32 = price as f32;
+    if price / BOOK_PRICE == 2 {
+        price_as_float *= 0.95;
+    } else if price / BOOK_PRICE == 3 {
+        price_as_float *= 0.90;
+    } else if price / BOOK_PRICE == 4 {
+        price_as_float *= 0.80;
+    } else if price / BOOK_PRICE == 5 {
+        price_as_float *= 0.75;
+    }
+    return price_as_float.round() as u16;
+}
+
+fn get_book_price(books: &mut HashMap<u8, u8>) -> u16 {
+    let mut price: u16 = 0;
+    for &i in &BOOK_ID_ARRAY {
+        match books.get(&i) {
+            Some(&book_amount) => {
+                if book_amount > 0 {
+                    books.insert(i, book_amount - 1);
+                    price += BOOK_PRICE;
+                } else {
+                    books.remove(&i);
+                }
+            }
+            None => {}
+        }
     }
     return price;
 }
 
-fn get_book_price(books: &mut HashMap<&u8, u8>) -> f32 {
-    let mut price: f32 = 0.0;
-    for i in BOOK_ID_ARRAY {
-        let book = books.get(i);
-        if book != None {
-            let num = book.expect("no number").clone();
-            if num > 0 {
-                books.insert(i, num - 1);
-                price += BOOK_PRICE;
+fn map_books(book_ids: &[u8]) -> HashMap<u8, u8> {
+    let mut books: HashMap<u8, u8> = HashMap::new();
+    for &id in book_ids {
+        match books.get(&id) {
+            Some(&book_amount) => {
+                books.insert(id, book_amount + 1);
+            }
+            None => {
+                books.insert(id, 1);
             }
         }
-    }
-    return price;
-}
-
-fn map_books(book_ids: &[u8]) -> HashMap<&u8, u8> {
-    let mut books: HashMap<&u8, u8> = HashMap::new();
-    for id in book_ids {
-        let count: u8;
-        if books.get(id) == None {
-            count = 1;
-        } else {
-            count = books.get(id).expect("no number") + 1;
-        }
-        books.insert(id, count);
     }
     return books;
 }
